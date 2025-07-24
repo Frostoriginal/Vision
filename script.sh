@@ -28,6 +28,7 @@ select continue in "Tak" "Nie"; do
 		done	
 
 #Podaj hasło do instancji mssql
+echo -e "${GREEN}[+] Podaj hasło dla SQL Server, minimum 8 znaków, małe i duże litery, cyfry:${NC}"
 while read -s pass; do
 	if [[ $pass = "" ]];
 	then
@@ -39,30 +40,46 @@ done
 sqlpass=$pass
 
 #zmiana czasu
-sudo dpkg0reconfigure tzdata
+echo -e "${GREEN}[+] Zmieniam strefę czasową${NC}"
+#zmiana lokalizacji, zegar na 24h //czy jest to potrzebne?
+localectl set-locale LC_TIME="en.GB.UTF-8" 
+
+#sudo dpkg0reconfigure tzdata
+sudo timedatectl set-timezone Europe/Warsaw
+echo -e "${GREEN}[+] Czy data jest poprawna${NC}"
+date
+#yes/no
+echo -e "${GREEN}[+] Tak / nie${NC}"
 
 #rozpoczęcie instalacji
 echo -e "${GREEN}[+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
 
+echo -e "${GREEN}[+] Pobieram GPG${NC}"
 curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
-
 curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
 
+echo -e "${GREEN}[+] Dodaje repozytorium${NC}"
 curl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list | sudo tee /etc/apt/sources.list.d/mssql-server-2022.list
 
+echo -e "${GREEN}[+] Instaluje MS SQL Server${NC}"
 sudo apt-get update
 sudo apt-get install -y mssql-server
-# {echo 'pass'; echo 'pass; } | sudo /opt/mssql/bin/mssql-conf setup
-sudo /opt/mssql/bin/mssql-conf setup
+echo -e "${GREEN}[+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
 
-systemctl status mssql-server --no-pager
+{echo '3'; echo '${pass}'; echo '${pass}'; } | sudo /opt/mssql/bin/mssql-conf setup
+#sudo /opt/mssql/bin/mssql-conf setup
+
+#systemctl status mssql-server --no-pager
 
 #zmiana kodowania
-echo -e "${GREEN}[+] Zmieniam kodowanie${NC}"
-
+echo -e "${GREEN}[+] Zatrzymuję server SQL${NC}"
 sudo systemctl stop mssql-server
-echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssqql-conf set-collation
+echo -e "${GREEN}[+] Zmieniam kodowanie${NC}"
+echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
+echo -e "${GREEN}[+] Uruchamiam server SQL${NC}"
 sudo systemctl start mssql-server
+echo -e "${GREEN}[+] Sprawdź status:${NC}"
+systemctl status mssql-server --no-pager
 #ustawianie instancji SQL
 #ustawić pamięć
 #ustawić logowanie mieszane
@@ -71,16 +88,29 @@ sudo systemctl start mssql-server
 #ustawianie bazy
 
 #dodanie mountów
+#pytanie czy chcesz dodać, muszą już istnieć foldery w windows i użytkownicy!
+#podaj ip windowsa
+#tworzę directory
+# sudo mkdir /mnt/shared/SQLBackup
 
+#podaj login i haslo do smb
+
+# sudo echo "//{IP}/SQLBackup /mnt/shared/SQLBackup cifs credentials=/etc/samba/passwd_file 0 0" >> /etc/fstab 
 #backup bazy
 # dodaj do crona
 #In Ubuntu and many other distros, you can just put a file into the /etc/cron.d directory containing a single line with a valid crontab entry. No need to add a line to an existing file.
 #If you just need something to run daily, just put a file into /etc/cron.daily. Likewise, you can also drop files into /etc/cron.hourly, /etc/cron.monthly, and /etc/cron.weekly.
 
 #baza
+#dobowe pełne
+# echo "" > /etc/cron.daily/sqlfullbackup
 #sqlcmd -S localhost -U sa -P passforsql -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
 #logi
 #sqlcmd -S localhost -U sa -P passforsql -Q "BACKUP LOG [protel] TO DISK = N'/mnt/shared/SQLBackup/protel_log.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-log', SKIP, NOREWIND, NOUNLOAD, STATS = 5"
+#godzinne
+
+#info - po reboocie sprawdź: godzinę, czy dysk się zamontował, czy system wykonuje backupy
+#sudo reboot
 
 
 
