@@ -47,7 +47,7 @@ done
 ip a
 
 echo -e "${GREEN}[+] Podaj adres ip:${NC}"
-while read -s ipadress; do
+while read -r ipadress; do
 	if [[ $ipadress = "" ]];
 	then
 	echo -e "${RED}[!] Adres serwera nie może być pusty, podaj IP jeszcze raz:${NC}"
@@ -154,7 +154,8 @@ source ~/.bash_profile
 
 #initial backup
 echo -e "${GREEN}[+] Tworzę pierwszy backup${NC}"
-sqlcmd -S ${ipadress} -U sa -P $sqlpass -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+echo -e "${GREEN}[+] Test zmiennych, ${sqlpass} ${ipadress} ${NC}"
+sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
 
 #baza
 echo -e "${GREEN}[+] Dodaje backup do CRONa${NC}"
