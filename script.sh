@@ -56,7 +56,7 @@ while read -s ipadress; do
 	fi
 done
 
-echo -e "${GREEN}[+] Adres serwera to to:${ipadress} ${NC}"
+echo -e "${GREEN}[+] Adres serwera to to: ${ipadress} ${NC}"
 
 #while [ -z "$sqlpass" ]; do
 #  echo "Wpisz haslo do sql: "
@@ -154,7 +154,7 @@ source ~/.bash_profile
 
 #initial backup
 echo -e "${GREEN}[+] Tworzę pierwszy backup${NC}"
-sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
 
 #baza
 echo -e "${GREEN}[+] Dodaje backup do CRONa${NC}"
