@@ -14,6 +14,7 @@ sqllicensecode=0
 smblogin=login
 smbpass=smbpass
 NOW="$(date +"%Y-%m-%d %T")"
+ipadress=$(hostname -I)
 
 #Ekran powitalny
 echo -e "${GREEN}${NOW} [+] Skrypt przeprowadzi cie przez instalacje MSSQL.${NC}"
@@ -53,18 +54,6 @@ while read -s pass; do
 	fi
 done
 sqlpass=$pass
-
-#pobierz adres, dodac weryfikacje wejscia
-ip a
-echo -e "${GREEN}${NOW} [+] Podaj adres ip:${NC}"
-while read -r ipadress; do
-	if [[ $ipadress = "" ]];
-	then
-	echo -e "${RED}${NOW} [!] Adres serwera nie może być pusty, podaj IP jeszcze raz:${NC}"
-	else
-	break;
-	fi
-done
 
 echo -e "${GREEN}${NOW} [+] Adres serwera to: ${ipadress} ${NC}"
 
