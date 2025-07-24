@@ -9,12 +9,18 @@ NC='\033[0m' # No Color
 
 #init variables
 sqlpass=default
-sqllicense=3
+sqllicense=5
 sqllicensecode=0
+smblogin=login
+smbpass=smbpass
 
 #Ekran powitalny
 echo -e "${GREEN}[+] Skrypt przeprowadzi cie przez instalacje MSSQL.${NC}"
-echo -e "${GREEN}[+] Skryp jest przygotowany dla ubuntu w wersji 22.04, czy chcesz kontynuować?${NC}"
+#przed kontynuowaniem przygotuj
+#licencje sql
+#haslo dla sql
+#user i haslo dla smb
+echo -e "${GREEN}[+] Skrypt jest przygotowany dla ubuntu w wersji 22.04, czy chcesz kontynuować?${NC}"
 
 #Czy chcesz kontynuować
 select continue in "Tak" "Nie"; do
@@ -29,13 +35,28 @@ select continue in "Tak" "Nie"; do
 
 #Podaj hasło do instancji mssql
 echo -e "${GREEN}[+] Podaj hasło dla SQL Server, minimum 8 znaków, małe i duże litery, cyfry:${NC}"
-while read -s pass; do
-	if [[ $pass = "" ]];
-	then
-	echo -e "${RED}[!] Password cannot be empty, please type in your password:${NC}"
-	else
-	break;
-	fi
+#while read -s pass; do
+#	if [[ $pass = "" ]];
+#	then
+#	echo -e "${RED}[!] Password cannot be empty, please type in your password:${NC}"
+#	else
+#	break;
+#	fi
+#done
+
+while [ -z "$sqlpass" ]; do
+  echo "Wpisz haslo do sql: "
+  read -s first
+  read -s -p "Wpisz haslo ponownie by potwierdzic: " second
+  if [ $first == $second ];
+  then
+    sqlpass=$first
+    echo "Hasla sa takie same, kontynuuje."
+  else
+    echo "Hasla sa inne, sprobuj jeszcze raz."
+    continue
+  fi
+  break
 done
 sqlpass=$pass
 
@@ -66,7 +87,7 @@ sudo apt-get update
 sudo apt-get install -y mssql-server
 echo -e "${GREEN}[+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
 
-{echo '3'; echo '${pass}'; echo '${pass}'; } | sudo /opt/mssql/bin/mssql-conf setup
+{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
 #sudo /opt/mssql/bin/mssql-conf setup
 
 #systemctl status mssql-server --no-pager
@@ -91,11 +112,14 @@ systemctl status mssql-server --no-pager
 #pytanie czy chcesz dodać, muszą już istnieć foldery w windows i użytkownicy!
 #podaj ip windowsa
 #tworzę directory
-# sudo mkdir /mnt/shared/SQLBackup
+# sudo mkdir -p /mnt/shared/SQLBackup
 
 #podaj login i haslo do smb
 
 # sudo echo "//{IP}/SQLBackup /mnt/shared/SQLBackup cifs credentials=/etc/samba/passwd_file 0 0" >> /etc/fstab 
+#sudo mkdir /etc/samba
+#echo -e "username=test\npassword=test" | sudo tee -a /etc/samba/passwd_file
+
 #backup bazy
 # dodaj do crona
 #In Ubuntu and many other distros, you can just put a file into the /etc/cron.d directory containing a single line with a valid crontab entry. No need to add a line to an existing file.
@@ -111,6 +135,7 @@ systemctl status mssql-server --no-pager
 
 #info - po reboocie sprawdź: godzinę, czy dysk się zamontował, czy system wykonuje backupy
 #sudo reboot
+#sqlcmd -S localhost -U sa -P passforsql -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
 
 
 
