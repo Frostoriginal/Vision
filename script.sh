@@ -35,29 +35,29 @@ select continue in "Tak" "Nie"; do
 
 #Podaj hasło do instancji mssql
 echo -e "${GREEN}[+] Podaj hasło dla SQL Server, minimum 8 znaków, małe i duże litery, cyfry:${NC}"
-#while read -s pass; do
-#	if [[ $pass = "" ]];
-#	then
-#	echo -e "${RED}[!] Password cannot be empty, please type in your password:${NC}"
-#	else
-#	break;
-#	fi
-#done
-
-while [ -z "$sqlpass" ]; do
-  echo "Wpisz haslo do sql: "
-  read -s first
-  read -s -p "Wpisz haslo ponownie by potwierdzic: " second
-  if [ $first == $second ];
-  then
-    sqlpass=$first
-    echo "Hasla sa takie same, kontynuuje."
-  else
-    echo "Hasla sa inne, sprobuj jeszcze raz."
-    continue
-  fi
-  break
+while read -s pass; do
+	if [[ $pass = "" ]];
+	then
+	echo -e "${RED}[!] Password cannot be empty, please type in your password:${NC}"
+	else
+	break;
+	fi
 done
+
+#while [ -z "$sqlpass" ]; do
+#  echo "Wpisz haslo do sql: "
+#  read -s first
+#  read -s -p "Wpisz haslo ponownie by potwierdzic: " second
+#  if [ $first == $second ];
+#  then
+#    sqlpass=$first
+#    echo "Hasla sa takie same, kontynuuje."
+#  else
+#    echo "Hasla sa inne, sprobuj jeszcze raz."
+#    continue
+#  fi
+#  break
+#done
 sqlpass=$pass
 
 #zmiana czasu
