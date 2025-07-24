@@ -101,6 +101,19 @@ echo -e "${GREEN}[+] Uruchamiam server SQL${NC}"
 sudo systemctl start mssql-server
 echo -e "${GREEN}[+] Sprawdź status:${NC}"
 systemctl status mssql-server --no-pager
+
+#instalacja toolsetu
+echo -e "${GREEN}[+] Instaluje SQL Server command-line tools${NC}"
+curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+sudo apt-get update
+sudo apt-get install mssql-tools18 unixodbc-dev
+sudo apt-get update
+sudo apt-get install mssql-tools18
+echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bash_profile
+source ~/.bash_profile
+
+
 #ustawianie instancji SQL
 #ustawić pamięć
 #ustawić logowanie mieszane
@@ -125,17 +138,32 @@ systemctl status mssql-server --no-pager
 #In Ubuntu and many other distros, you can just put a file into the /etc/cron.d directory containing a single line with a valid crontab entry. No need to add a line to an existing file.
 #If you just need something to run daily, just put a file into /etc/cron.daily. Likewise, you can also drop files into /etc/cron.hourly, /etc/cron.monthly, and /etc/cron.weekly.
 
+#initial backup
+echo -e "${GREEN}[+] Tworzę pierwszy backup${NC}"
+sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+
 #baza
+echo -e "${GREEN}[+] Dodaje backup do CRONa${NC}"
 #dobowe pełne
-# echo "" > /etc/cron.daily/sqlfullbackup
-#sqlcmd -S localhost -U sa -P passforsql -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+#sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+command='sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"'
+job="0 0 * * 0 $command"
+cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
+
 #logi
-#sqlcmd -S localhost -U sa -P passforsql -Q "BACKUP LOG [protel] TO DISK = N'/mnt/shared/SQLBackup/protel_log.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-log', SKIP, NOREWIND, NOUNLOAD, STATS = 5"
+#sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP LOG [protel] TO DISK = N'/mnt/shared/SQLBackup/protel_log.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-log', SKIP, NOREWIND, NOUNLOAD, STATS = 5"
+command='sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP LOG [protel] TO DISK = N'/mnt/shared/SQLBackup/protel_log.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-log', SKIP, NOREWIND, NOUNLOAD, STATS = 5"'
+job="0 0 * * 0 $command"
+cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
 #godzinne
+#sqlcmd -S localhost -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+command='sqlcmd -S localhost -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"'
+job="0 0 * * 0 $command"
+cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
+
 
 #info - po reboocie sprawdź: godzinę, czy dysk się zamontował, czy system wykonuje backupy
 #sudo reboot
-#sqlcmd -S localhost -U sa -P passforsql -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
 
 
 
