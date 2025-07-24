@@ -20,9 +20,9 @@ echo -e "${GREEN}[+] Skrypt przeprowadzi cie przez instalacje MSSQL.${NC}"
 #licencje sql
 #haslo dla sql
 #user i haslo dla smb
-echo -e "${GREEN}[+] Skrypt jest przygotowany dla ubuntu w wersji 22.04, czy chcesz kontynuować?${NC}"
 
 #Czy chcesz kontynuować
+echo -e "${GREEN}[+] Skrypt jest przygotowany dla ubuntu w wersji 22.04, czy chcesz kontynuować?${NC}"
 select continue in "Tak" "Nie"; do
 		case $continue in
 		Tak ) 		
@@ -74,23 +74,25 @@ echo -e "${GREEN}[+] Adres serwera to to: ${ipadress} ${NC}"
 #done
 sqlpass=$pass
 
-#zmiana czasu
+if date | grep -w 'CEST' -q;
+  then
+    echo -e "${GREEN}[+] Strefa czasowa jest poprawna${NC}"
+  else
+  echo -e "${RED}[!] Niepoprawna strefa czasowa!${NC}\n"
+  #zmiana czasu
 echo -e "${GREEN}[+] Zmieniam strefę czasową${NC}"
 #zmiana lokalizacji, zegar na 24h //czy jest to potrzebne?
-localectl set-locale LC_TIME="en_GB.UTF-8" 
-
-#sudo dpkg0reconfigure tzdata
+#localectl set-locale LC_TIME="en_GB.UTF-8" 
 sudo timedatectl set-timezone Europe/Warsaw
-echo -e "${GREEN}[+] Czy data jest poprawna${NC}"
+echo -e "${Orange}[+] Sprawdz czy data jest poprawna${NC}"
 date
-#yes/no
-echo -e "${GREEN}[+] Tak / nie${NC}"
+fi
 
-#sprawdz czy juz nie ma
+
+#sprawdz czy mssql jest juz zainstalowany
 dpkg -s mssql-server &> /dev/null  
 
     if [ $? -ne 0 ]
-
         then
             echo "not installed" 
 	    #rozpoczęcie instalacji
@@ -115,30 +117,11 @@ dpkg -s mssql-server &> /dev/null
         else
             echo    "MS SQL Server jest juz zainstalowany."
     fi
-    
-
-
-#systemctl status mssql-server --no-pager
-
-if sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
-	then
-	echo -e "${GREEN}[+] Strona kodowania jest poprawna${NC}"
-	else
-	echo -e "${RED}[!] Strona kodowania nie jest poprawna${NC}\n"
-	#zmiana kodowania
-	echo -e "${GREEN}[+] Zatrzymuję server SQL${NC}"
-	sudo systemctl stop mssql-server
-	echo -e "${GREEN}[+] Zmieniam kodowanie${NC}"
-	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
-	echo -e "${GREEN}[+] Uruchamiam server SQL${NC}"
-	sudo systemctl start mssql-server
-fi
-
 
 echo -e "${GREEN}[+] Sprawdź status:${NC}"
 systemctl status mssql-server --no-pager
 
-#sprawdz toolsetu czy juz nie ma
+#sprawdz czy toolsetu czy juz nie ma
 dpkg -s mssql-tools18 &> /dev/null  
 
     if [ $? -ne 0 ]
@@ -161,7 +144,20 @@ dpkg -s mssql-tools18 &> /dev/null
            echo -e "${GREEN}[+] SQL Server command-line tools jest już zainstalowany${NC}"
     fi
 
-
+#sprawdz czy strona kodowania jest poprawna
+if sqlcmd -S $ipadress -U sa -P $sqlpass -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
+	then
+	echo -e "${GREEN}[+] Strona kodowania jest poprawna${NC}"
+	else
+	echo -e "${RED}[!] Strona kodowania nie jest poprawna${NC}\n"
+	#zmiana kodowania
+	echo -e "${GREEN}[+] Zatrzymuję server SQL${NC}"
+	sudo systemctl stop mssql-server
+	echo -e "${GREEN}[+] Zmieniam kodowanie${NC}"
+	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
+	echo -e "${GREEN}[+] Uruchamiam server SQL${NC}"
+	sudo systemctl start mssql-server
+fi
 
 
 #ustawianie instancji SQL
