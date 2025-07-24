@@ -63,7 +63,7 @@ sqlpass=$pass
 #zmiana czasu
 echo -e "${GREEN}[+] Zmieniam strefę czasową${NC}"
 #zmiana lokalizacji, zegar na 24h //czy jest to potrzebne?
-localectl set-locale LC_TIME="en.GB.UTF-8" 
+localectl set-locale LC_TIME="en_GB.UTF-8" 
 
 #sudo dpkg0reconfigure tzdata
 sudo timedatectl set-timezone Europe/Warsaw
@@ -87,8 +87,8 @@ sudo apt-get update
 sudo apt-get install -y mssql-server
 echo -e "${GREEN}[+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
 
-{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
-#sudo /opt/mssql/bin/mssql-conf setup
+#{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
+sudo /opt/mssql/bin/mssql-conf setup
 
 #systemctl status mssql-server --no-pager
 
