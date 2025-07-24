@@ -13,20 +13,21 @@ sqllicense=5
 sqllicensecode=0
 smblogin=login
 smbpass=smbpass
+NOW="$(date +"%Y-%m-%d %T")"
 
 #Ekran powitalny
-echo -e "${GREEN}[+] Skrypt przeprowadzi cie przez instalacje MSSQL.${NC}"
+echo -e "${GREEN}${NOW}[+] Skrypt przeprowadzi cie przez instalacje MSSQL.${NC}"
 #przed kontynuowaniem przygotuj
 #licencje sql
 #haslo dla sql
 #user i haslo dla smb
+echo -e "${GREEN}${NOW}[+] Skrypt jest przygotowany dla ubuntu w wersji 22.04, czy chcesz kontynuować?${NC}"
 
 #Czy chcesz kontynuować
-echo -e "${GREEN}[+] Skrypt jest przygotowany dla ubuntu w wersji 22.04, czy chcesz kontynuować?${NC}"
 select continue in "Tak" "Nie"; do
 		case $continue in
 		Tak ) 		
-		echo -e "${GREEN}[+] Kontynuujemy.${NC}\n"
+		echo -e "${GREEN}${NOW}[+] Kontynuujemy.${NC}\n"
 		break;;
 	
 		Nie ) exit;;
@@ -34,29 +35,30 @@ select continue in "Tak" "Nie"; do
 		done	
 
 #Podaj hasło do instancji mssql
-echo -e "${GREEN}[+] Podaj hasło dla SQL Server, minimum 8 znaków, małe i duże litery, cyfry:${NC}"
+echo -e "${GREEN}${NOW}[+] Podaj hasło dla SQL Server, minimum 8 znaków, małe i duże litery, cyfry:${NC}"
 while read -s pass; do
 	if [[ $pass = "" ]];
 	then
-	echo -e "${RED}[!] Password cannot be empty, please type in your password:${NC}"
+	echo -e "${RED}${NOW}[!] Password cannot be empty, please type in your password:${NC}"
 	else
 	break;
 	fi
 done
+sqlpass=$pass
 
+#pobierz adres, dodac weryfikacje wejscia
 ip a
-
-echo -e "${GREEN}[+] Podaj adres ip:${NC}"
+echo -e "${GREEN}${NOW}[+] Podaj adres ip:${NC}"
 while read -r ipadress; do
 	if [[ $ipadress = "" ]];
 	then
-	echo -e "${RED}[!] Adres serwera nie może być pusty, podaj IP jeszcze raz:${NC}"
+	echo -e "${RED}${NOW}[!] Adres serwera nie może być pusty, podaj IP jeszcze raz:${NC}"
 	else
 	break;
 	fi
 done
 
-echo -e "${GREEN}[+] Adres serwera to to: ${ipadress} ${NC}"
+echo -e "${GREEN}${NOW}[+] Adres serwera to: ${ipadress} ${NC}"
 
 #while [ -z "$sqlpass" ]; do
 #  echo "Wpisz haslo do sql: "
@@ -72,40 +74,38 @@ echo -e "${GREEN}[+] Adres serwera to to: ${ipadress} ${NC}"
 #  fi
 #  break
 #done
-sqlpass=$pass
 
-if date | grep -w 'CEST' -q;
-  then
-    echo -e "${GREEN}[+] Strefa czasowa jest poprawna${NC}"
-  else
-  echo -e "${RED}[!] Niepoprawna strefa czasowa!${NC}\n"
-  #zmiana czasu
-echo -e "${GREEN}[+] Zmieniam strefę czasową${NC}"
+
+#zmiana czasu
+echo -e "${GREEN}${NOW}[+] Zmieniam strefę czasową${NC}"
 #zmiana lokalizacji, zegar na 24h //czy jest to potrzebne?
-#localectl set-locale LC_TIME="en_GB.UTF-8" 
+localectl set-locale LC_TIME="en_GB.UTF-8" 
+
+#sudo dpkg0reconfigure tzdata
 sudo timedatectl set-timezone Europe/Warsaw
-echo -e "${Orange}[+] Sprawdz czy data jest poprawna${NC}"
+echo -e "${GREEN}${NOW}[+] Czy data jest poprawna${NC}"
 date
-fi
+#yes/no
+echo -e "${GREEN}${NOW}[+] Tak / nie${NC}"
 
-
-#sprawdz czy mssql jest juz zainstalowany
+#sprawdz czy juz nie ma
 dpkg -s mssql-server &> /dev/null  
 
     if [ $? -ne 0 ]
+
         then
             echo "not installed" 
 	    #rozpoczęcie instalacji
-	echo -e "${GREEN}[+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
+	echo -e "${GREEN}${NOW}[+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
 
-	echo -e "${GREEN}[+] Pobieram GPG${NC}"
+	echo -e "${GREEN}${NOW}[+] Pobieram GPG${NC}"
 	curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
 	curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
 	
-	echo -e "${GREEN}[+] Dodaje repozytorium${NC}"
+	echo -e "${GREEN}${NOW}[+] Dodaje repozytorium${NC}"
 	curl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list | sudo tee /etc/apt/sources.list.d/mssql-server-2022.list
 	
-	echo -e "${GREEN}[+] Instaluje MS SQL Server${NC}"
+	echo -e "${GREEN}${NOW}[+] Instaluje MS SQL Server${NC}"
 	sudo apt-get update
 	sudo apt-get install -y mssql-server
 	echo -e "${GREEN}[+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
@@ -117,19 +117,38 @@ dpkg -s mssql-server &> /dev/null
         else
             echo    "MS SQL Server jest juz zainstalowany."
     fi
+    
 
-echo -e "${GREEN}[+] Sprawdź status:${NC}"
+
+#systemctl status mssql-server --no-pager
+
+if sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
+	then
+	echo -e "${GREEN}${NOW}[+] Strona kodowania jest poprawna${NC}"
+	else
+	echo -e "${RED}${NOW}[!] Strona kodowania nie jest poprawna${NC}\n"
+	#zmiana kodowania
+	echo -e "${GREEN}${NOW}[+] Zatrzymuję server SQL${NC}"
+	sudo systemctl stop mssql-server
+	echo -e "${GREEN}${NOW}[+] Zmieniam kodowanie${NC}"
+	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
+	echo -e "${GREEN}${NOW}[+] Uruchamiam server SQL${NC}"
+	sudo systemctl start mssql-server
+fi
+
+
+echo -e "${GREEN}${NOW}[+] Sprawdź status:${NC}"
 systemctl status mssql-server --no-pager
 
-#sprawdz czy toolsetu czy juz nie ma
+#sprawdz toolsetu czy juz nie ma
 dpkg -s mssql-tools18 &> /dev/null  
 
     if [ $? -ne 0 ]
 
         then
-           echo -e "${RED}[!]  SQL Server command-line tools nie jest zainstalowany${NC}\n"
+           echo -e "${RED}${NOW}[!]  SQL Server command-line tools nie jest zainstalowany${NC}\n"
 	    #instalacja toolsetu
-		echo -e "${GREEN}[+] Instaluje SQL Server command-line tools${NC}"
+		echo -e "${GREEN}${NOW}[+] Instaluje SQL Server command-line tools${NC}"
 		curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
 		curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
 		sudo apt-get update
@@ -141,23 +160,10 @@ dpkg -s mssql-tools18 &> /dev/null
             
 
         else
-           echo -e "${GREEN}[+] SQL Server command-line tools jest już zainstalowany${NC}"
+           echo -e "${GREEN}${NOW}[+] SQL Server command-line tools jest już zainstalowany${NC}"
     fi
 
-#sprawdz czy strona kodowania jest poprawna
-if sqlcmd -S $ipadress -U sa -P $sqlpass -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
-	then
-	echo -e "${GREEN}[+] Strona kodowania jest poprawna${NC}"
-	else
-	echo -e "${RED}[!] Strona kodowania nie jest poprawna${NC}\n"
-	#zmiana kodowania
-	echo -e "${GREEN}[+] Zatrzymuję server SQL${NC}"
-	sudo systemctl stop mssql-server
-	echo -e "${GREEN}[+] Zmieniam kodowanie${NC}"
-	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
-	echo -e "${GREEN}[+] Uruchamiam server SQL${NC}"
-	sudo systemctl start mssql-server
-fi
+
 
 
 #ustawianie instancji SQL
@@ -179,18 +185,14 @@ fi
 #sudo mkdir /etc/samba
 #echo -e "username=test\npassword=test" | sudo tee -a /etc/samba/passwd_file
 
-#backup bazy
-# dodaj do crona
-#In Ubuntu and many other distros, you can just put a file into the /etc/cron.d directory containing a single line with a valid crontab entry. No need to add a line to an existing file.
-#If you just need something to run daily, just put a file into /etc/cron.daily. Likewise, you can also drop files into /etc/cron.hourly, /etc/cron.monthly, and /etc/cron.weekly.
-
-#initial backup
-set -x    
-echo -e "${GREEN}[+] Tworzę pierwszy backup${NC}"
+#set -x
+#debug
+#wykonaj pierwszy backu
+echo -e "${GREEN}${NOW}[+] Tworzę pierwszy backup${NC}"
 sqlcmd -S $ipadress -U sa -P $sqlpass -C -Q 'BACKUP DATABASE [protel] TO DISK = N'\''/mnt/shared/SQLBackup/protel.bak'\'' WITH NOFORMAT, NOINIT, NAME = '\''protel-full'\'', SKIP, NOREWIND, NOUNLOAD, STATS = 10'
 set +x
 #baza
-echo -e "${GREEN}[+] Dodaje backup do CRONa${NC}"
+echo -e "${GREEN}${NOW}[+] Dodaje backup do CRONa${NC}"
 #dobowe pełne
 #sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
 command='sqlcmd -S '$ipadress' -U sa -P '$sqlpass' -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"'
@@ -207,7 +209,6 @@ cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
 command='sqlcmd -S '$ipadress' -U sa -P '$sqlpass' -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"'
 job="0 0 * * 0 $command"
 cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
-
 
 #info - po reboocie sprawdź: godzinę, czy dysk się zamontował, czy system wykonuje backupy
 #sudo reboot
