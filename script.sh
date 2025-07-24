@@ -44,6 +44,20 @@ while read -s pass; do
 	fi
 done
 
+ip a
+
+echo -e "${GREEN}[+] Podaj adres ip:${NC}"
+while read -s ipadress; do
+	if [[ $ipadress = "" ]];
+	then
+	echo -e "${RED}[!] Adres serwera nie może być pusty, podaj IP jeszcze raz:${NC}"
+	else
+	break;
+	fi
+done
+
+echo -e "${GREEN}[+] Adres serwera to to:${ipadress} ${NC}"
+
 #while [ -z "$sqlpass" ]; do
 #  echo "Wpisz haslo do sql: "
 #  read -s first
