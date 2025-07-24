@@ -86,46 +86,82 @@ date
 #yes/no
 echo -e "${GREEN}[+] Tak / nie${NC}"
 
-#rozpoczęcie instalacji
-echo -e "${GREEN}[+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
+#sprawdz czy juz nie ma
+dpkg -s mssql-server &> /dev/null  
 
-echo -e "${GREEN}[+] Pobieram GPG${NC}"
-curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
-curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+    if [ $? -ne 0 ]
 
-echo -e "${GREEN}[+] Dodaje repozytorium${NC}"
-curl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list | sudo tee /etc/apt/sources.list.d/mssql-server-2022.list
+        then
+            echo "not installed" 
+	    #rozpoczęcie instalacji
+	echo -e "${GREEN}[+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
 
-echo -e "${GREEN}[+] Instaluje MS SQL Server${NC}"
-sudo apt-get update
-sudo apt-get install -y mssql-server
-echo -e "${GREEN}[+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
+	echo -e "${GREEN}[+] Pobieram GPG${NC}"
+	curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+	curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+	
+	echo -e "${GREEN}[+] Dodaje repozytorium${NC}"
+	curl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list | sudo tee /etc/apt/sources.list.d/mssql-server-2022.list
+	
+	echo -e "${GREEN}[+] Instaluje MS SQL Server${NC}"
+	sudo apt-get update
+	sudo apt-get install -y mssql-server
+	echo -e "${GREEN}[+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
 
-#{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
-sudo /opt/mssql/bin/mssql-conf setup
+	#{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
+	sudo /opt/mssql/bin/mssql-conf setup
+            
+
+        else
+            echo    "MS SQL Server jest juz zainstalowany."
+    fi
+    
+
 
 #systemctl status mssql-server --no-pager
 
-#zmiana kodowania
-echo -e "${GREEN}[+] Zatrzymuję server SQL${NC}"
-sudo systemctl stop mssql-server
-echo -e "${GREEN}[+] Zmieniam kodowanie${NC}"
-echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
-echo -e "${GREEN}[+] Uruchamiam server SQL${NC}"
-sudo systemctl start mssql-server
+if sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
+	then
+	echo -e "${GREEN}[+] Strona kodowania jest poprawna${NC}"
+	else
+	echo -e "${RED}[!] Strona kodowania nie jest poprawna${NC}\n"
+	#zmiana kodowania
+	echo -e "${GREEN}[+] Zatrzymuję server SQL${NC}"
+	sudo systemctl stop mssql-server
+	echo -e "${GREEN}[+] Zmieniam kodowanie${NC}"
+	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
+	echo -e "${GREEN}[+] Uruchamiam server SQL${NC}"
+	sudo systemctl start mssql-server
+fi
+
+
 echo -e "${GREEN}[+] Sprawdź status:${NC}"
 systemctl status mssql-server --no-pager
 
-#instalacja toolsetu
-echo -e "${GREEN}[+] Instaluje SQL Server command-line tools${NC}"
-curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
-curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
-sudo apt-get update
-sudo apt-get install mssql-tools18 unixodbc-dev
-sudo apt-get update
-sudo apt-get install mssql-tools18
-echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bash_profile
-source ~/.bash_profile
+#sprawdz toolsetu czy juz nie ma
+dpkg -s mssql-tools18 &> /dev/null  
+
+    if [ $? -ne 0 ]
+
+        then
+           echo -e "${RED}[!]  SQL Server command-line tools nie jest zainstalowany${NC}\n"
+	    #instalacja toolsetu
+		echo -e "${GREEN}[+] Instaluje SQL Server command-line tools${NC}"
+		curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+		curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+		sudo apt-get update
+		sudo apt-get install mssql-tools18 unixodbc-dev
+		sudo apt-get update
+		sudo apt-get install mssql-tools18
+		echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bash_profile
+		source ~/.bash_profile
+            
+
+        else
+           echo -e "${GREEN}[+] SQL Server command-line tools jest już zainstalowany${NC}"
+    fi
+
+
 
 
 #ustawianie instancji SQL
@@ -155,8 +191,7 @@ source ~/.bash_profile
 #initial backup
 set -x    
 echo -e "${GREEN}[+] Tworzę pierwszy backup${NC}"
-echo -e "${GREEN}[+] Test zmiennych, ${sqlpass} ${ipadress} ${NC}"
-sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+sqlcmd -S $ipadress -U sa -P $sqlpass -C -Q 'BACKUP DATABASE [protel] TO DISK = N'\''/mnt/shared/SQLBackup/protel.bak'\'' WITH NOFORMAT, NOINIT, NAME = '\''protel-full'\'', SKIP, NOREWIND, NOUNLOAD, STATS = 10'
 set +x
 #baza
 echo -e "${GREEN}[+] Dodaje backup do CRONa${NC}"
