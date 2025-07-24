@@ -153,6 +153,7 @@ source ~/.bash_profile
 #If you just need something to run daily, just put a file into /etc/cron.daily. Likewise, you can also drop files into /etc/cron.hourly, /etc/cron.monthly, and /etc/cron.weekly.
 
 #initial backup
+set -x    
 echo -e "${GREEN}[+] Tworzę pierwszy backup${NC}"
 echo -e "${GREEN}[+] Test zmiennych, ${sqlpass} ${ipadress} ${NC}"
 sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
@@ -176,7 +177,7 @@ command='sqlcmd -S localhost -U sa -P passforsql -C -Q "BACKUP DATABASE [protel]
 job="0 0 * * 0 $command"
 cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
 
-
+set +x
 #info - po reboocie sprawdź: godzinę, czy dysk się zamontował, czy system wykonuje backupy
 #sudo reboot
 
