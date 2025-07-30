@@ -30,17 +30,18 @@ if hostnamectl | grep '22.04' -q;
   else
   echo -e "${RED}${NOW} [!] Niepoprawna wersja systemu!${NC}\n"
   echo -e "${GREEN}${NOW} [+] Skrypt jest przygotowany dla ubuntu w wersji 22.04, czy chcesz kontynuować?${NC}"
+	  #Czy chcesz kontynuować
+	  select continue in "Tak" "Nie"; do
+			case $continue in
+			Tak ) 		
+			echo -e "${GREEN}${NOW}[+] Kontynuujemy.${NC}\n"
+			break;;
+		
+			Nie ) exit;;
+			esac
+			done	
 fi
-#Czy chcesz kontynuować
-select continue in "Tak" "Nie"; do
-		case $continue in
-		Tak ) 		
-		echo -e "${GREEN}${NOW}[+] Kontynuujemy.${NC}\n"
-		break;;
-	
-		Nie ) exit;;
-		esac
-		done	
+
 
 # set -x #debug mode
 
@@ -61,10 +62,10 @@ sqlpass=$pass
 
 echo -e "${GREEN}${NOW} [+] Adres serwera to: ${ipadress} ${NC}"
 
-touch /etc/vision/backup.ini
-echo "sqllogin=sa" >> /etc/vision/backup.ini
-echo "sqlpass=${sqlpass}" >> /etc/vision/backup.ini
-echo "serveradress=${ipadress}" >> /etc/vision/backup.ini
+sudo touch /etc/vision/backup.ini
+echo "sqllogin=sa" | sudo tee -a /etc/vision/backup.ini
+echo "sqlpass=${sqlpass}" | sudo tee -a /etc/vision/backup.ini
+echo "serveradress=${ipadress}" | sudo tee -a /etc/vision/backup.ini
 
 
 #while [ -z "$sqlpass" ]; do
@@ -196,13 +197,13 @@ dpkg -s mssql-tools18 &> /dev/null
 #sudo mkdir /etc/samba
 #echo -e "username=test\npassword=test" | sudo tee -a /etc/samba/passwd_file
 
-#pobiez backup script //TO DO zaktualizować link po wrzuceniu na gh
+#pobiez backup script
 sudo wget https://raw.githubusercontent.com/Frostoriginal/Vision/refs/heads/main/backup.sh > /etc/vision/backup.sh
-chmod +x /etc/vision/backup.sh
+sudo chmod +x /etc/vision/backup.sh
 #Dodaj skrypt do CRONa
 echo "0 * * * * /etc/vision/backup.sh" | sudo tee -a /var/spool/cron/crontabs/root #Cron job every hour
 # wykonaj skrypt po raz 1
-./etc/vision/backup.sh
+sudo ./etc/vision/backup.sh
 
 
 
