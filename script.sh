@@ -163,7 +163,7 @@ dpkg -s mssql-tools18 &> /dev/null
 
 # Sprawdz collation
 echo -e "${GREEN}${NOW} [+] Sprawdam strone kodowania:${NC}"
-if /opt/mssql-tools18/bin/sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
+if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
 	then
 	echo -e "${GREEN}${NOW} [+] Strona kodowania jest poprawna${NC}"
 	else
@@ -209,12 +209,5 @@ echo "0 * * * * /etc/vision/backup.sh" | sudo tee -a /var/spool/cron/crontabs/ro
 sudo /etc/vision/backup.sh
 
 
-
 #info - po reboocie sprawdź: godzinę, czy dysk się zamontował, czy system wykonuje backupy
 #sudo reboot
-
-
-
-
-
-
