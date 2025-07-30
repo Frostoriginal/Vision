@@ -198,8 +198,10 @@ dpkg -s mssql-tools18 &> /dev/null
 #echo -e "username=test\npassword=test" | sudo tee -a /etc/samba/passwd_file
 
 #pobiez backup script
-sudo wget https://raw.githubusercontent.com/Frostoriginal/Vision/refs/heads/main/backup.sh > /etc/vision/backup.sh
+wget https://raw.githubusercontent.com/Frostoriginal/Vision/refs/heads/main/backup.sh
 sudo chmod +x /etc/vision/backup.sh
+sudo cp backup.sh /etc/vision/backup.sh
+rm backup.sh
 #Dodaj skrypt do CRONa
 echo "0 * * * * /etc/vision/backup.sh" | sudo tee -a /var/spool/cron/crontabs/root #Cron job every hour
 # wykonaj skrypt po raz 1
