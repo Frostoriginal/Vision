@@ -59,16 +59,6 @@ while read -s pass; do
 	fi
 done
 sqlpass=$pass
-
-echo -e "${GREEN}${NOW} [+] Adres serwera to: ${ipadress} ${NC}"
-
-sudo touch /etc/vision/backup.ini
-#echo "sqllogin=sa" | sudo tee -a /etc/vision/backup.ini
-echo "sqllogin=sa" | sudo tee -a /etc/vision/backup.ini >/dev/null
-echo "sqlpass=${sqlpass}" | sudo tee -a /etc/vision/backup.ini >/dev/null
-echo "serveradress=${ipadress}" | sudo tee -a /etc/vision/backup.ini >/dev/null
-
-
 #while [ -z "$sqlpass" ]; do
 #  echo "Wpisz haslo do sql: "
 #  read -s first
@@ -83,6 +73,20 @@ echo "serveradress=${ipadress}" | sudo tee -a /etc/vision/backup.ini >/dev/null
 #  fi
 #  break
 #done
+
+
+echo -e "${GREEN}${NOW} [+] Adres serwera to: ${ipadress} ${NC}"
+
+
+#resetuj ini i zapisz ustawienia
+sudo rm /etc/vision/backup.ini
+sudo touch /etc/vision/backup.ini
+echo "sqllogin=sa" | sudo tee -a /etc/vision/backup.ini >/dev/null
+echo "sqlpass=${sqlpass}" | sudo tee -a /etc/vision/backup.ini >/dev/null
+echo "serveradress=${ipadress}" | sudo tee -a /etc/vision/backup.ini >/dev/null
+
+
+
 
 #zmiana czasu
 if date | grep -w 'CEST' -q;
@@ -123,18 +127,20 @@ dpkg -s mssql-server &> /dev/null
 
 	#{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
 	sudo /opt/mssql/bin/mssql-conf setup
-            
-
         else
 		echo -e "${GREEN}${NOW} [+] MS SQL Server jest juz zainstalowany.${NC}"
             
     fi
     
+#Uruchom MS SQL Server
+sudo systemctl start mssql-server
 
+#sprawdz czy MS SQL Server jest aktywny
+echo -e "${GREEN}${NOW} [+] Sprawdź status:${NC}"
+systemctl status mssql-server --no-pager
 
-#systemctl status mssql-server --no-pager
-
-# Sprawdz collation - komenda do sprawdzenia
+# Sprawdz collation
+echo -e "${GREEN}${NOW} [+] Sprawdam strone kodowania:${NC}"
 if /opt/mssql-tools18/bin/sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
 	then
 	echo -e "${GREEN}${NOW} [+] Strona kodowania jest poprawna${NC}"
@@ -150,8 +156,8 @@ if /opt/mssql-tools18/bin/sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "S
 fi
 
 
-echo -e "${GREEN}${NOW} [+] Sprawdź status:${NC}"
-systemctl status mssql-server --no-pager
+
+
 #TO DO dodac grep check
 #sprawdz toolsetu czy juz nie ma
 dpkg -s mssql-tools18 &> /dev/null  
@@ -170,8 +176,6 @@ dpkg -s mssql-tools18 &> /dev/null
 		sudo apt-get install mssql-tools18
 		echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bash_profile
 		source ~/.bash_profile
-            
-
         else
            echo -e "${GREEN}${NOW} [+] SQL Server command-line tools jest już zainstalowany${NC}"
     fi
@@ -185,6 +189,7 @@ dpkg -s mssql-tools18 &> /dev/null
 
 
 #ustawianie bazy
+# sqlcmd -S myServer\instanceName -i C:\scripts\myScript.sql -> utworz baze ze skryptu?
 #TO DO dodac skrypt do tworzenia bazy
 #dodanie mountów
 #pytanie czy chcesz dodać, muszą już istnieć foldery w windows i użytkownicy!
