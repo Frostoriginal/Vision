@@ -205,7 +205,7 @@ rm backup.sh
 #Dodaj skrypt do CRONa
 echo "0 * * * * /etc/vision/backup.sh" | sudo tee -a /var/spool/cron/crontabs/root #Cron job every hour
 # wykonaj skrypt po raz 1
-sudo ./etc/vision/backup.sh
+sudo /etc/vision/backup.sh
 
 
 
