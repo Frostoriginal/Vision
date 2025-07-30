@@ -3,7 +3,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 export DISPLAY=:0.0
 
 #import variables                                                                                                                       
-source /etc/vision/script.ini 
+source /etc/vision/backup.ini 
 
 # Define the backup directory
 backup_dir="/mnt/shared/SQLBackup"
