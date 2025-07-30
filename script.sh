@@ -139,25 +139,6 @@ sudo systemctl start mssql-server
 echo -e "${GREEN}${NOW} [+] Sprawdź status:${NC}"
 systemctl status mssql-server --no-pager
 
-# Sprawdz collation
-echo -e "${GREEN}${NOW} [+] Sprawdam strone kodowania:${NC}"
-if /opt/mssql-tools18/bin/sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
-	then
-	echo -e "${GREEN}${NOW} [+] Strona kodowania jest poprawna${NC}"
-	else
-	echo -e "${RED}${NOW} [!] Strona kodowania nie jest poprawna${NC}\n"
-	#zmiana kodowania
-	echo -e "${GREEN}${NOW} [+] Zatrzymuję server SQL${NC}"
-	sudo systemctl stop mssql-server
-	echo -e "${GREEN}${NOW} [+] Zmieniam kodowanie${NC}"
-	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
-	echo -e "${GREEN}${NOW} [+] Uruchamiam server SQL${NC}"
-	sudo systemctl start mssql-server
-fi
-
-
-
-
 #TO DO dodac grep check
 #sprawdz toolsetu czy juz nie ma
 dpkg -s mssql-tools18 &> /dev/null  
@@ -173,14 +154,28 @@ dpkg -s mssql-tools18 &> /dev/null
 		sudo apt-get update
 		sudo apt-get install mssql-tools18 unixodbc-dev
 		sudo apt-get update
-		sudo apt-get install mssql-tools18
+		sudo apt-get install mssql-tools18 -y
 		echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bash_profile
 		source ~/.bash_profile
         else
            echo -e "${GREEN}${NOW} [+] SQL Server command-line tools jest już zainstalowany${NC}"
     fi
 
-
+# Sprawdz collation
+echo -e "${GREEN}${NOW} [+] Sprawdam strone kodowania:${NC}"
+if /opt/mssql-tools18/bin/sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
+	then
+	echo -e "${GREEN}${NOW} [+] Strona kodowania jest poprawna${NC}"
+	else
+	echo -e "${RED}${NOW} [!] Strona kodowania nie jest poprawna${NC}\n"
+	#zmiana kodowania
+	echo -e "${GREEN}${NOW} [+] Zatrzymuję server SQL${NC}"
+	sudo systemctl stop mssql-server
+	echo -e "${GREEN}${NOW} [+] Zmieniam kodowanie${NC}"
+	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
+	echo -e "${GREEN}${NOW} [+] Uruchamiam server SQL${NC}"
+	sudo systemctl start mssql-server
+fi
 
 
 #ustawianie instancji SQL
@@ -205,7 +200,7 @@ dpkg -s mssql-tools18 &> /dev/null
 
 #pobiez backup script
 wget https://raw.githubusercontent.com/Frostoriginal/Vision/refs/heads/main/backup.sh
-sudo chmod +x /etc/vision/backup.sh
+sudo chmod +x backup.sh
 sudo cp backup.sh /etc/vision/backup.sh
 rm backup.sh
 #Dodaj skrypt do CRONa
