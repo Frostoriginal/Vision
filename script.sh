@@ -19,9 +19,10 @@ ipadress=$(hostname -I)
 #Ekran powitalny
 echo -e "${GREEN}${NOW} [+] Skrypt przeprowadzi cie przez instalacje MSSQL.${NC}"
 echo -e "${GREEN}${NOW} [+] Przed kontynuowaniem:${NC}"
-echo -e "${GREEN}${NOW} [+] Przygotuj icencje MS SQL i kod licencyjny jesli jest wymagany${NC}"
+echo -e "${GREEN}${NOW} [+] Przygotuj licencje MS SQL i kod licencyjny jesli jest wymagany${NC}"
 echo -e "${GREEN}${NOW} [+] Ustal haslo dla MS SQL${NC}"
 echo -e "${GREEN}${NOW} [+] Udostepnij folder dla backupu i ustal login i haslo${NC}"
+echo -e ""
 
 if hostnamectl | grep '22.04' -q;
   then
@@ -29,7 +30,7 @@ if hostnamectl | grep '22.04' -q;
   else
   echo -e "${RED}${NOW} [!] Niepoprawna wersja systemu!${NC}\n"
   echo -e "${GREEN}${NOW} [+] Skrypt jest przygotowany dla ubuntu w wersji 22.04, czy chcesz kontynuować?${NC}"
-
+fi
 #Czy chcesz kontynuować
 select continue in "Tak" "Nie"; do
 		case $continue in
@@ -40,7 +41,7 @@ select continue in "Tak" "Nie"; do
 		Nie ) exit;;
 		esac
 		done	
-fi
+
 # set -x #debug mode
 
 #stworz foldery
@@ -196,7 +197,7 @@ dpkg -s mssql-tools18 &> /dev/null
 #echo -e "username=test\npassword=test" | sudo tee -a /etc/samba/passwd_file
 
 #pobiez backup script //TO DO zaktualizować link po wrzuceniu na gh
-wget https://raw.githubusercontent.com/Frostoriginal/Vision/refs/heads/main/backup.sh > /etc/vision/backup.sh
+sudo wget https://raw.githubusercontent.com/Frostoriginal/Vision/refs/heads/main/backup.sh > /etc/vision/backup.sh
 chmod +x /etc/vision/backup.sh
 #Dodaj skrypt do CRONa
 echo "0 * * * * /etc/vision/backup.sh" | sudo tee -a /var/spool/cron/crontabs/root #Cron job every hour
