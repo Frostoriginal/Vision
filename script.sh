@@ -63,7 +63,8 @@ sqlpass=$pass
 echo -e "${GREEN}${NOW} [+] Adres serwera to: ${ipadress} ${NC}"
 
 sudo touch /etc/vision/backup.ini
-echo "sqllogin=sa" | sudo tee -a /etc/vision/backup.ini
+#echo "sqllogin=sa" | sudo tee -a /etc/vision/backup.ini
+sudo tee -a /etc/vision/backup.ini <echo "sqllogin=sa" >/dev/null
 echo "sqlpass=${sqlpass}" | sudo tee -a /etc/vision/backup.ini
 echo "serveradress=${ipadress}" | sudo tee -a /etc/vision/backup.ini
 
