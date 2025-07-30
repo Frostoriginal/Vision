@@ -18,10 +18,10 @@ ipadress=$(hostname -I)
 
 #Ekran powitalny
 echo -e "${GREEN}${NOW} [+] Skrypt przeprowadzi cie przez instalacje MSSQL.${NC}"
-#przed kontynuowaniem przygotuj
-#licencje sql
-#haslo dla sql
-#user i haslo dla smb
+echo -e "${GREEN}${NOW} [+] Przed kontynuowaniem:${NC}"
+echo -e "${GREEN}${NOW} [+] Przygotuj icencje MS SQL i kod licencyjny jesli jest wymagany${NC}"
+echo -e "${GREEN}${NOW} [+] Ustal haslo dla MS SQL${NC}"
+echo -e "${GREEN}${NOW} [+] Udostepnij folder dla backupu i ustal login i haslo${NC}"
 
 if hostnamectl | grep '22.04' -q;
   then
@@ -41,9 +41,12 @@ select continue in "Tak" "Nie"; do
 		esac
 		done	
 fi
+# set -x #debug mode
 
+#stworz foldery
+sudo mkdir -p /etc/vision
 
-#Podaj hasło do instancji mssql
+#Podaj hasło do instancji mssql #TO DO password match
 echo -e "${GREEN}${NOW} [+] Podaj hasło dla SQL Server, minimum 8 znaków, małe i duże litery, cyfry:${NC}"
 while read -s pass; do
 	if [[ $pass = "" ]];
@@ -56,6 +59,12 @@ done
 sqlpass=$pass
 
 echo -e "${GREEN}${NOW} [+] Adres serwera to: ${ipadress} ${NC}"
+
+touch /etc/vision/backup.ini
+echo "sqllogin=sa" >> /etc/vision/backup.ini
+echo "sqlpass=${sqlpass}" >> /etc/vision/backup.ini
+echo "serveradress=${ipadress}" >> /etc/vision/backup.ini
+
 
 #while [ -z "$sqlpass" ]; do
 #  echo "Wpisz haslo do sql: "
@@ -93,7 +102,7 @@ dpkg -s mssql-server &> /dev/null
     if [ $? -ne 0 ]
 
         then
-            echo "not installed" 
+            echo -e "${GREEN}${NOW} [+] MS SQL Server nie jest zainstalowany, instaluje.${NC}" 
 	    #rozpoczęcie instalacji
 	echo -e "${GREEN}${NOW} [+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
 
@@ -114,14 +123,16 @@ dpkg -s mssql-server &> /dev/null
             
 
         else
-            echo    "MS SQL Server jest juz zainstalowany."
+		echo -e "${GREEN}${NOW} [+] MS SQL Server jest juz zainstalowany.${NC}"
+            
     fi
     
 
 
 #systemctl status mssql-server --no-pager
 
-if sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
+# Sprawdz collation - komenda do sprawdzenia
+if /opt/mssql-tools18/bin/sqlcmd -S 192.168.68.85 -U sa -P Protel915930 -C -Q "SELECT CONVERT (varchar(256), SERVERPROPERTY('collation'));" | grep -w 'Polish_CI_AS' -q;
 	then
 	echo -e "${GREEN}${NOW} [+] Strona kodowania jest poprawna${NC}"
 	else
@@ -184,30 +195,15 @@ dpkg -s mssql-tools18 &> /dev/null
 #sudo mkdir /etc/samba
 #echo -e "username=test\npassword=test" | sudo tee -a /etc/samba/passwd_file
 
-#set -x
-#debug
-#wykonaj pierwszy backu
-echo -e "${GREEN}${NOW} [+] Tworzę pierwszy backup${NC}"
-sqlcmd -S $ipadress -U sa -P $sqlpass -C -Q 'BACKUP DATABASE [protel] TO DISK = N'\''/mnt/shared/SQLBackup/protel.bak'\'' WITH NOFORMAT, NOINIT, NAME = '\''protel-full'\'', SKIP, NOREWIND, NOUNLOAD, STATS = 10'
-set +x
-#baza
-echo -e "${GREEN}${NOW} [+] Dodaje backup do CRONa${NC}"
-#dobowe pełne
-#sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
-command='sqlcmd -S '$ipadress' -U sa -P '$sqlpass' -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"'
-job="0 0 * * 0 $command"
-cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
+#pobiez backup script //TO DO zaktualizować link po wrzuceniu na gh
+wget https://raw.githubusercontent.com/Frostoriginal/Vision/refs/heads/main/backup.sh > /etc/vision/backup.sh
+chmod +x /etc/vision/backup.sh
+#Dodaj skrypt do CRONa
+echo "0 * * * * /etc/vision/backup.sh" | sudo tee -a /var/spool/cron/crontabs/root #Cron job every hour
+# wykonaj skrypt po raz 1
+./etc/vision/backup.sh
 
-#logi
-#sqlcmd -S IP! -U sa -P passforsql -C -Q "BACKUP LOG [protel] TO DISK = N'/mnt/shared/SQLBackup/protel_log.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-log', SKIP, NOREWIND, NOUNLOAD, STATS = 5"
-command='sqlcmd -S '$ipadress' -U sa -P '$sqlpass' -C -Q "BACKUP LOG [protel] TO DISK = N'/mnt/shared/SQLBackup/protel_log.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-log', SKIP, NOREWIND, NOUNLOAD, STATS = 5"'
-job="0 0 * * 0 $command"
-cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
-#godzinne
-#sqlcmd -S localhost -U sa -P passforsql -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
-command='sqlcmd -S '$ipadress' -U sa -P '$sqlpass' -C -Q "BACKUP DATABASE [protel] TO DISK = N'/mnt/shared/SQLBackup/protel.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"'
-job="0 0 * * 0 $command"
-cat <(fgrep -i -v "$command" <(crontab -l)) <(echo "$job") | crontab -
+
 
 #info - po reboocie sprawdź: godzinę, czy dysk się zamontował, czy system wykonuje backupy
 #sudo reboot
