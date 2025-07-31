@@ -168,24 +168,31 @@ dpkg -s mssql-server &> /dev/null
     if [ $? -ne 0 ]
 
         then
-            echo -e "${GREEN}${NOW} [+] MS SQL Server nie jest zainstalowany, instaluje.${NC}" 
-	    #rozpoczęcie instalacji
-	echo -e "${GREEN}${NOW} [+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
+			echo -e "${GREEN}${NOW} [+] MS SQL Server nie jest zainstalowany, instaluje.${NC}" 
+			#rozpoczęcie instalacji
+			echo -e "${GREEN}${NOW} [+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
 
-	echo -e "${GREEN}${NOW} [+] Pobieram GPG${NC}"
-	curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
-	curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
-	
-	echo -e "${GREEN}${NOW} [+] Dodaje repozytorium${NC}"
-	curl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list | sudo tee /etc/apt/sources.list.d/mssql-server-2022.list
-	
-	echo -e "${GREEN}${NOW} [+] Instaluje MS SQL Server${NC}"
-	sudo apt-get update
-	sudo apt-get install -y mssql-server
-	echo -e "${GREEN} [+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
+			echo -e "${GREEN}${NOW} [+] Pobieram GPG${NC}"
+			curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+			curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+			
+			echo -e "${GREEN}${NOW} [+] Dodaje repozytorium${NC}"
+			curl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list | sudo tee /etc/apt/sources.list.d/mssql-server-2022.list
+			
+			echo -e "${GREEN}${NOW} [+] Instaluje MS SQL Server${NC}"
+			sudo apt-get update
+			sudo apt-get install -y mssql-server
+			echo -e "${GREEN} [+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
 
-	#{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
-	sudo /opt/mssql/bin/mssql-conf setup
+			#{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
+			if locale | grep pl_PL -q;
+			then
+			(echo "5"; echo "No"; echo "Yes"; echo "1"; echo "${sqlpass}"; echo "${sqlpass}"; ) | sudo /opt/mssql/bin/mssql-conf setup
+			else
+			(echo "5"; echo "No"; echo "Yes"; echo "${sqlpass}"; echo "${sqlpass}"; ) | sudo /opt/mssql/bin/mssql-conf setup
+			fi
+			
+			#sudo /opt/mssql/bin/mssql-conf setup
         else
 		echo -e "${GREEN}${NOW} [+] MS SQL Server jest juz zainstalowany.${NC}"
             
@@ -270,14 +277,14 @@ if sudo cat /etc/fstab  | grep ${cifsdir} -q;
     echo -e "${GREEN}${NOW} [+] Udzial sieciowy jest juz dodany${NC}"
   else
     echo -e "${GREEN}${NOW} [+] Tworze folder${NC}"
-    sudo mkdir -P /shared/windows_mount  
+    sudo mkdir -p /shared/windows_mount  
     echo -e "${GREEN}${NOW} [+] Dodaje udzial sieciowy${NC}"
 	echo "${cifsdir} /shared/windows_mount cifs vers=3.0,username=${cifslogin},password=${cifspass},iocharset=utf8,file_mode=0777,dir_mode=0777,uid=998,gid=998,nofail 0 0" | sudo tee -a /etc/fstab
     echo -e "${GREEN}${NOW} [+] Testuje udzial sieciowy${NC}"
     if sudo mount -a ; then
 	echo -e "${GREEN}${NOW} [+] Udzial dodany poprawnie${NC}"
 	else
-	echo -e "${GREEN}${NOW} [+] Blad udzialu, sprawdz /etc/fstab ${NC}"
+	echo -e "${RED}${NOW} [!] Blad udzialu, sprawdz /etc/fstab ${NC}"
 	fi
 fi
 
