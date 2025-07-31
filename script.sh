@@ -140,19 +140,21 @@ if locale | grep pl_PL -q;
   else
   echo -e "${RED}${NOW} [!] Niepoprawna lokalizacja!${NC}\n"
   #zmiana czasu
-  echo -e "${GREEN}${NOW} [+] Zmieniam lokąlizacje${NC}"
+  echo -e "${GREEN}${NOW} [+] Zmieniam lokalizacje${NC}"
+  sudo locale-gen pl_PL
   sudo locale-gen pl_PL.UTF-8
-  sudo localectl set-locale LC_TIME="pl_PL.UTF-8 UTF-8" 
+  sudo update-locale LANG=pl_PL.UTF-8  
+  sudo localectl set-locale LC_TIME="pl_PL.UTF-8" 
   sudo update-locale LC_TIME="pl-PL.UTF-8 UTF-8"
 fi
 
-#zmiana czasu
+#zmiana strefy czasowej
 if date | grep -w 'CEST' -q;
   then
     echo -e "${GREEN}${NOW} [+] Strefa czasowa jest poprawna${NC}"
   else
   echo -e "${RED}${NOW} [!] Niepoprawna strefa czasowa!${NC}\n"
-  #zmiana czasu
+  
 echo -e "${GREEN}${NOW} [+] Zmieniam strefę czasową${NC}"
 
 sudo timedatectl set-timezone Europe/Warsaw
@@ -196,7 +198,6 @@ sudo systemctl start mssql-server
 echo -e "${GREEN}${NOW} [+] Sprawdź status:${NC}"
 systemctl status mssql-server --no-pager
 
-#TO DO dodac grep check
 #sprawdz toolsetu czy juz nie ma
 dpkg -s mssql-tools18 &> /dev/null  
 
