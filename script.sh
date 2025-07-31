@@ -59,6 +59,41 @@ while read -s pass; do
 	fi
 done
 sqlpass=$pass
+
+#Podaj adres udzialu windows
+echo -e "${GREEN}${NOW} [+] Podaj adres udzialu windows(//ip/folder): ${NC}"
+echo -e "${GREEN}${NOW} [+] Przyklad: //192.168.0.5/SQLBackup ${NC}"
+while read cifsdir; do
+	if [[ $cifsdir = "" ]];
+	then
+	echo -e "${RED}${NOW} [!] Adres udziału nie moze byc pusty, podaj adres udzialu:${NC}"
+	else
+	break;
+	fi
+done
+
+#Podaj login udzialu windows
+echo -e "${GREEN}${NOW} [+] Podaj login udzialu: ${NC}"
+while read cifslogin; do
+	if [[ $cifslogin = "" ]];
+	then
+	echo -e "${RED}${NOW} [!] Login udziału nie moze byc pusty, podaj login udzialu:${NC}"
+	else
+	break;
+	fi
+done
+
+#Podaj haslo udzialu windows
+echo -e "${GREEN}${NOW} [+] Podaj haslo udzialu windows: ${NC}"
+while read -s cifspass; do
+	if [[ $cifspass = "" ]];
+	then
+	echo -e "${RED}${NOW} [!] Haslo udziału nie moze byc puste, podaj haslo udzialu:${NC}"
+	else
+	break;
+	fi
+done
+
 #while [ -z "$sqlpass" ]; do
 #  echo "Wpisz haslo do sql: "
 #  read -s first
@@ -77,16 +112,39 @@ sqlpass=$pass
 
 echo -e "${GREEN}${NOW} [+] Adres serwera to: ${ipadress} ${NC}"
 
+#Podaj nazwy baz danych
+echo -e "${GREEN}${NOW} [+] Podaj nazwy baz danych, oddzielone spacjami: ${NC}"
+while read -s databases; do
+	if [[ $databases = "" ]];
+	then
+	echo -e "${RED}${NOW} [!] Nazwy baz danych nie moga byc puste, wpisz nazwy baz danych${NC}"
+	else
+	break;
+	fi
+done
 
+echo -e "${GREEN}${NOW} [+] Zapisuje wszystkie ustawienia w /etc/vision/backup.ini ${NC}"
 #resetuj ini i zapisz ustawienia
 sudo rm /etc/vision/backup.ini
 sudo touch /etc/vision/backup.ini
 echo "sqllogin=sa" | sudo tee -a /etc/vision/backup.ini >/dev/null
 echo "sqlpass=${sqlpass}" | sudo tee -a /etc/vision/backup.ini >/dev/null
 echo "serveradress=${ipadress}" | sudo tee -a /etc/vision/backup.ini >/dev/null
+echo "databases='${databases}'" | sudo tee -a /etc/vision/backup.ini >/dev/null
 
 
-
+#zmiana locale
+if locale | grep pl_PL -q;
+  then
+    echo -e "${GREEN}${NOW} [+] Lokalizacja jest poprawna${NC}"
+  else
+  echo -e "${RED}${NOW} [!] Niepoprawna lokalizacja!${NC}\n"
+  #zmiana czasu
+  echo -e "${GREEN}${NOW} [+] Zmieniam lokąlizacje${NC}"
+  sudo locale-gen pl_PL.UTF-8
+  sudo localectl set-locale LC_TIME="pl_PL.UTF-8 UTF-8" 
+  sudo update-locale LC_TIME="pl-PL.UTF-8 UTF-8"
+fi
 
 #zmiana czasu
 if date | grep -w 'CEST' -q;
@@ -96,8 +154,7 @@ if date | grep -w 'CEST' -q;
   echo -e "${RED}${NOW} [!] Niepoprawna strefa czasowa!${NC}\n"
   #zmiana czasu
 echo -e "${GREEN}${NOW} [+] Zmieniam strefę czasową${NC}"
-#zmiana lokalizacji, zegar na 24h //czy jest to potrzebne?
-#localectl set-locale LC_TIME="en_GB.UTF-8" 
+
 sudo timedatectl set-timezone Europe/Warsaw
 echo -e "${Orange}${NOW} [+] Sprawdz czy data jest poprawna${NC}"
 date
@@ -184,27 +241,51 @@ fi
 
 
 #ustawianie bazy
+dbname="protel"
+# wget skrypt -> dbname.sql
 # sqlcmd -S myServer\instanceName -i C:\scripts\myScript.sql -> utworz baze ze skryptu?
+if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -i ${dbname}.sql
+	then
+	echo -e "${GREEN}${NOW} [+] Poprawnie wgrano baze ${dbname}${NC}"
+	else
+	echo -e "${RED}${NOW} [!] Blad przy dodawaniu bazy${NC}\n"
+fi
+
+
 #TO DO dodac skrypt do tworzenia bazy
 #dodanie mountów
 #pytanie czy chcesz dodać, muszą już istnieć foldery w windows i użytkownicy!
 #podaj ip windowsa
 #tworzę directory
 # sudo mkdir -p /mnt/shared/SQLBackup
-
+#cifsdir=10.16.5.5/SQLBackup
+#cifslogin=linux_sql
+#cifspass=Visiontime1.
 #podaj login i haslo do smb
 #TO DO dodac mount dla dysku windows
-# sudo echo "//{IP}/SQLBackup /mnt/shared/SQLBackup cifs credentials=/etc/samba/passwd_file 0 0" >> /etc/fstab 
-#sudo mkdir /etc/samba
-#echo -e "username=test\npassword=test" | sudo tee -a /etc/samba/passwd_file
+#sudo mkdir -P /shared/windows_mount
+
+#echo "${cifsdir} /shared/windows_mount cifs vers=3.0,username=${cifslogin},password=${cifspass},iocharset=utf8,file_mode=0777,dir_mode=0777,uid=998,gid=998,nofail 0 0" | sudo tee -a /etc/fstab
+#mount -a
 
 #pobiez backup script
 wget https://raw.githubusercontent.com/Frostoriginal/Vision/refs/heads/main/backup.sh
 sudo chmod +x backup.sh
 sudo cp backup.sh /etc/vision/backup.sh
 rm backup.sh
-#Dodaj skrypt do CRONa
-echo "0 * * * * /etc/vision/backup.sh" | sudo tee -a /var/spool/cron/crontabs/root #Cron job every hour
+
+
+#Dodaj skrypt do CRONa TODO - grep check czy nie ma juz w cronie
+if sudo cat /var/spool/cron/crontabs/root  | grep -w '/etc/vision/backup.sh' -q;
+  then
+    echo -e "${GREEN}${NOW} [+] Skrypt do backupu jest juz dodany do CRONa${NC}"
+  else  
+    echo -e "${GREEN}${NOW} [+] Dodaje skrypt do backupu do CRONa${NC}"
+    echo "0 * * * * /etc/vision/backup.sh" | sudo tee -a /var/spool/cron/crontabs/root #Cron job every hour
+
+fi
+
+
 # wykonaj skrypt po raz 1
 sudo /etc/vision/backup.sh
 
