@@ -292,4 +292,11 @@ sudo /etc/vision/backup.sh
 
 
 #info - po reboocie sprawdź: godzinę, czy dysk się zamontował, czy system wykonuje backupy
-#sudo reboot
+echo -e "${GREEN}${NOW} [+] Skrypt zakonczył działanie${NC}"
+echo -e "${GREEN}${NOW} [+] Po ponownym uruchomieniu sprawdz czy godzina/strefa czasowa jest poprawna oraz czy zamontowal sie dysk do backupow ${NC}"
+for ((i = 10 ; i > 0 ; i-- )); do
+echo -e "${GREEN}${NOW} [+] Ponowne uruchomienie za: ${i}s${NC}"
+sleep 1 
+ 
+done
+sudo reboot
