@@ -139,13 +139,13 @@ if locale | grep pl_PL -q;
     echo -e "${GREEN}${NOW} [+] Lokalizacja jest poprawna${NC}"
   else
   echo -e "${RED}${NOW} [!] Niepoprawna lokalizacja!${NC}\n"
-  #zmiana czasu
   echo -e "${GREEN}${NOW} [+] Zmieniam lokalizacje${NC}"
   sudo locale-gen pl_PL
   sudo locale-gen pl_PL.UTF-8
-  sudo update-locale LANG=pl_PL.UTF-8  
+  sudo update-locale LC_ALL=pl_PL.UTF-8 LANG=pl_PL.UTF-8
+  source /etc/default/locale
   sudo localectl set-locale LC_TIME="pl_PL.UTF-8" 
-  sudo update-locale LC_TIME="pl-PL.UTF-8 UTF-8"
+  sudo update-locale LC_TIME="pl-PL.UTF-8"
 fi
 
 #zmiana strefy czasowej
@@ -264,7 +264,24 @@ fi
 #cifspass=Visiontime1.
 #podaj login i haslo do smb
 #TO DO dodac mount dla dysku windows
-#sudo mkdir -P /shared/windows_mount
+
+if sudo cat /etc/fstab  | grep ${cifsdir} -q;
+  then
+    echo -e "${GREEN}${NOW} [+] Udzial sieciowy jest juz dodany${NC}"
+  else
+    echo -e "${GREEN}${NOW} [+] Tworze folder${NC}"
+    sudo mkdir -P /shared/windows_mount  
+    echo -e "${GREEN}${NOW} [+] Dodaje udzial sieciowy${NC}"
+	echo "${cifsdir} /shared/windows_mount cifs vers=3.0,username=${cifslogin},password=${cifspass},iocharset=utf8,file_mode=0777,dir_mode=0777,uid=998,gid=998,nofail 0 0" | sudo tee -a /etc/fstab
+    echo -e "${GREEN}${NOW} [+] Testuje udzial sieciowy${NC}"
+    if sudo mount -a ; then
+	echo -e "${GREEN}${NOW} [+] Udzial dodany poprawnie${NC}"
+	else
+	echo -e "${GREEN}${NOW} [+] Blad udzialu, sprawdz /etc/fstab ${NC}"
+	fi
+fi
+
+
 
 #echo "${cifsdir} /shared/windows_mount cifs vers=3.0,username=${cifslogin},password=${cifspass},iocharset=utf8,file_mode=0777,dir_mode=0777,uid=998,gid=998,nofail 0 0" | sudo tee -a /etc/fstab
 #mount -a
@@ -296,7 +313,7 @@ echo -e "${GREEN}${NOW} [+] Skrypt zakonczył działanie${NC}"
 echo -e "${GREEN}${NOW} [+] Po ponownym uruchomieniu sprawdz czy godzina/strefa czasowa jest poprawna oraz czy zamontowal sie dysk do backupow ${NC}"
 for ((i = 10 ; i > 0 ; i-- )); do
 echo -e "${GREEN}${NOW} [+] Ponowne uruchomienie za: ${i}s${NC}"
-sleep 1 
+/bin/sleep 1 
  
-done
-sudo reboot
+ done
+ sudo reboot
