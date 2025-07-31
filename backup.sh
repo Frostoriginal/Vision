@@ -6,7 +6,7 @@ export DISPLAY=:0.0
 source /etc/vision/backup.ini 
 
 # Define the backup directory
-backup_dir="/mnt/shared/SQLBackup"
+backup_dir="/shared/windows_mount/"
 fulldir=$backup_dir/full
 diffdir=$backup_dir/diff
 logdir=$backup_dir/log
@@ -21,49 +21,62 @@ timestamp=$(date +'%Y%m%d')
 timestampfull=$(date +'%Y%m%d_%H')
 timestamplog=$(date +'%Y.%m.%d_%H:%M:%S')
 
-touch $backup_dir/${timestamp}log.txt
+touch $backup_dir/${timestamp}_log.txt
 
-#Protel
+### Backupy ###
+#Petla backup 
+for dbname in $databases
+do
+if /opt/mssql-tools18/bin/sqlcmd -S ${serveradress} -U ${sqllogin} -P ${sqlpass} -C -Q "SELECT name FROM master.sys.databases WHERE name = N'${dbname}'" | grep -w '${dbname}' -q; then
+echo "${timestamplog}|Baza danych ${dbname} istnieje, tworze backupy" >> $backup_dir/${timestamp}_log.txt    
 #Backup dobowy
- if ls $fulldir | grep -w ${timestamp}protel.bak -q;
+ if ls $fulldir | grep -w ${timestamp}${dbname}.bak -q;
   then
-    echo "${timestamplog}|Dzisiejszy backup bazy protel juz istnieje" >> $backup_dir/${timestamp}log.txt
+    echo "${timestamplog}|Dzisiejszy backup bazy ${dbname} juz istnieje" >> $backup_dir/${timestamp}_log.txt
   else
-    echo "${timestamplog}|Stworzylem dzisiejszy backup bazy protel" >> $backup_dir/${timestamp}log.txt  
-    /opt/mssql-tools18/bin/sqlcmd -S ${serveradress} -U ${sqllogin} -P ${sqlpass} -C -Q "BACKUP DATABASE [protel] TO DISK = N'${fulldir}/${timestamp}protel.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10" 
-    echo "${timestamplog}|Stworzylem dzisiejszy backup" >> $backup_dir/${timestamp}log.txt
+    if /opt/mssql-tools18/bin/sqlcmd -S ${serveradress} -U ${sqllogin} -P ${sqlpass} -C -Q "BACKUP DATABASE [${dbname}] TO DISK = N'${fulldir}/${timestamp}${dbname}.bak' WITH NOFORMAT, NOINIT, NAME = '${dbname}-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10" ; then
+    echo "${timestamplog}|Stworzylem dzisiejszy backup bazy ${dbname}" >> $backup_dir/${timestamp}_log.txt  
+    else
+	echo "${timestamplog}|Blad przy tworzeniu backupu bazy ${dbname}" >> $backup_dir/${timestamp}_log.txt
+	fi
  fi
 
 #logi
- if ls $logdir | grep -w ${timestamp}protel_log.bak -q;
+ if ls $logdir | grep -w ${timestamp}${dbname}_log.bak -q;
   then
-    echo "${timestamplog}|Dzisiejszy backup logow juz istnieje" >> $backup_dir/${timestamp}log.txt
+    echo "${timestamplog}|Dzisiejszy backup logow bazy ${dbname} juz istnieje" >> $backup_dir/${timestamp}_log.txt
   else
-    echo "${timestamplog}|Stworzylem dzisiejszy backup logow" >> $backup_dir/${timestamp}log.txt
-    /opt/mssql-tools18/bin/sqlcmd -S ${serveradress} -U ${sqllogin} -P ${sqlpass} -C -Q "BACKUP LOG [protel] TO DISK = N'${logdir}/${timestamp}protel_log.bak' WITH NOFORMAT, NOINIT, NAME = 'protel-log', SKIP, NOREWIND, NOUNLOAD, STATS = 5"     
-	echo "${timestamplog}|Stworzylem dzisiejszy backup logow" >> $backup_dir/${timestamp}log.txt
+    if /opt/mssql-tools18/bin/sqlcmd -S ${serveradress} -U ${sqllogin} -P ${sqlpass} -C -Q "BACKUP LOG [${dbname}] TO DISK = N'${logdir}/${timestamp}${dbname}_log.bak' WITH NOFORMAT, NOINIT, NAME = '${dbname}-log', SKIP, NOREWIND, NOUNLOAD, STATS = 5"; then     
+	echo "${timestamplog}|Stworzylem dzisiejszy backup logow bazy ${dbname}" >> $backup_dir/${timestamp}_log.txt
+    else
+	echo "${timestamplog}|Blad przy tworzeniu backupu logow bazy ${dbname}" >> $backup_dir/${timestamp}_log.txt
+	fi
  fi
 
 #Backup godzinny
- if ls $diffdir | grep -w ${timestampfull}protel.bak -q;
+ if ls $diffdir | grep -w ${timestampfull}${dbname}.bak -q;
   then
-    echo "${timestamplog}|Backup z godziny juz istnieje" >> $backup_dir/${timestamp}log.txt
+    echo "${timestamplog}|Backup bazy ${dbname} z godziny juz istnieje" >> $backup_dir/${timestamp}_log.txt
   else
-    if /opt/mssql-tools18/bin/sqlcmd -S ${serveradress} -U ${sqllogin} -P ${sqlpass} -C -Q "BACKUP DATABASE [protel] TO DISK = N'${diffdir}/${timestampfull}protel.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = 'protel-full', SKIP, NOREWIND, NOUNLOAD, STATS  = 10"; then
-	echo "${timestamplog}|Stworzylem backup z godziny" >> $backup_dir/${timestamp}log.txt
+    if /opt/mssql-tools18/bin/sqlcmd -S ${serveradress} -U ${sqllogin} -P ${sqlpass} -C -Q "BACKUP DATABASE [${dbname}] TO DISK = N'${diffdir}/${timestampfull}${dbname}.bak' WITH DIFFERENTIAL, NOFORMAT, NOINIT, NAME = '${dbname}-full', SKIP, NOREWIND, NOUNLOAD, STATS  = 10"; then
+	echo "${timestamplog}|Stworzylem backup z godziny" >> $backup_dir/${timestamp}_log.txt
     else
-    echo "${timestamplog}|Blad przy tworzeniu backupu z godziny" >> $backup_dir/${timestamp}log.txt
+    echo "${timestamplog}|Blad przy tworzeniu backupu z godziny" >> $backup_dir/${timestamp}_log.txt
     fi
  fi
+else
+echo "${timestamplog}|Baza danych protel nie istnieje" >> $backup_dir/${timestamp}_log.txt
+fi
+done
 
 #Usun starsze niz 3 dni 
 find ${backup_dir} -mtime +2 -type f -delete
 
 #Zmiana uprawnien
-echo "${timestamplog}|Zmieniam uprawnienia" >> $backup_dir/${timestamp}log.txt
-chmod -R 777 /mnt/shared
+echo "${timestamplog}|Zmieniam uprawnienia plikow w ${backup_dir}" >> $backup_dir/${timestamp}_log.txt
+chmod -R 777 /shared/windows_mount/
 
-echo "${timestamplog}|Koniec skryptu" >> $backup_dir/${timestamp}log.txt
-echo "${timestamplog}|==================================================" >> $backup_dir/${timestamp}log.txt
+echo "${timestamplog}|Koniec skryptu" >> $backup_dir/${timestamp}_log.txt
+echo "${timestamplog}|==================================================" >> $backup_dir/${timestamp}_log.txt
 
 
