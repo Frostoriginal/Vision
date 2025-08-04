@@ -249,7 +249,7 @@ fi
 #ustawianie bazy
 #wget skrypt -> /etc/vision/base.sql
 #sqlcmd -S myServer\instanceName -i C:\scripts\myScript.sql -> utworz baze ze skryptu?
-if /opt/mssql-tools18/bin/sqlcmd -S 192.168.68.92 -U sa -P Protel915930 -C -Q "SELECT name FROM master.sys.databases WHERE name = N'protel'" | grep -w 'protel' -q;
+if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "SELECT name FROM master.sys.databases WHERE name = N'protel'" | grep -w 'protel' -q;
 	then
 	echo -e "${GREEN}${NOW} [+] Baza protel juz istnieje${NC}"
 	else
