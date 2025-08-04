@@ -169,7 +169,7 @@ dpkg -s mssql-server &> /dev/null
 
         then
 			echo -e "${GREEN}${NOW} [+] MS SQL Server nie jest zainstalowany, instaluje.${NC}" 
-			#rozpoczęcie instalacji
+			#rozpoczęcie instalacji //dodać locale check
 			echo -e "${GREEN}${NOW} [+] Instaluje MSSQL zgodnie z artykułem: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-linux-ver16&preserve-view=true&tabs=ubuntu2204.${NC}"
 
 			echo -e "${GREEN}${NOW} [+] Pobieram GPG${NC}"
@@ -240,6 +240,7 @@ if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "SELEC
 	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
 	echo -e "${GREEN}${NOW} [+] Uruchamiam server SQL${NC}"
 	sudo systemctl start mssql-server
+	sudo systemctl status mssql-server
 fi
 
 
@@ -256,7 +257,7 @@ if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "SELEC
 	echo -e "${GREEN}${NOW} [+] Tworze bazy z pliku${NC}"
 	if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -i /etc/vision/base.sql
 		then
-		echo -e "${GREEN}${NOW} [+] Poprawnie wgrano baze ${dbname}${NC}"
+		echo -e "${GREEN}${NOW} [+] Poprawnie wgrano baze${NC}"
 		else
 		echo -e "${RED}${NOW} [!] Blad przy dodawaniu bazy${NC}\n"
     fi
