@@ -246,18 +246,26 @@ fi
 #ustawianie instancji SQL
 #ustawić pamięć
 #ustawić logowanie mieszane
-
-
 #ustawianie bazy
-dbname="protel"
-# wget skrypt -> /etc/vision/base.sql
-# sqlcmd -S myServer\instanceName -i C:\scripts\myScript.sql -> utworz baze ze skryptu?
-if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -i /etc/vision/base.sql
+#wget skrypt -> /etc/vision/base.sql
+#sqlcmd -S myServer\instanceName -i C:\scripts\myScript.sql -> utworz baze ze skryptu?
+if /opt/mssql-tools18/bin/sqlcmd -S 192.168.68.92 -U sa -P Protel915930 -C -Q "SELECT name FROM master.sys.databases WHERE name = N'protel'" | grep -w 'protel' -q;
 	then
-	echo -e "${GREEN}${NOW} [+] Poprawnie wgrano baze ${dbname}${NC}"
+	echo -e "${GREEN}${NOW} [+] Baza protel juz istnieje${NC}"
 	else
-	echo -e "${RED}${NOW} [!] Blad przy dodawaniu bazy${NC}\n"
+	echo -e "${GREEN}${NOW} [+] Tworze bazy z pliku${NC}"
+	if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -i /etc/vision/base.sql
+		then
+		echo -e "${GREEN}${NOW} [+] Poprawnie wgrano baze ${dbname}${NC}"
+		else
+		echo -e "${RED}${NOW} [!] Blad przy dodawaniu bazy${NC}\n"
+    fi
+
 fi
+
+
+
+
 
 
 #TO DO dodac skrypt do tworzenia bazy
