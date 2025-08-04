@@ -191,7 +191,7 @@ dpkg -s mssql-server &> /dev/null
 			#else
 			#(echo "5"; echo "No"; echo "Yes"; echo "${sqlpass}"; echo "${sqlpass}"; ) | sudo /opt/mssql/bin/mssql-conf setup
 			#fi
-			sudo MSSQL_SA_PASSWORD=${sqlpass} \     MSSQL_PID=standard \     /opt/mssql/bin/mssql-conf -n setup accept-eula
+			sudo MSSQL_SA_PASSWORD=${sqlpass} MSSQL_PID=standard /opt/mssql/bin/mssql-conf -n setup accept-eula
 			
 			#sudo /opt/mssql/bin/mssql-conf setup
         else
