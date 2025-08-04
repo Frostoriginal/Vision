@@ -114,7 +114,7 @@ echo -e "${GREEN}${NOW} [+] Adres serwera to: ${ipadress} ${NC}"
 
 #Podaj nazwy baz danych
 echo -e "${GREEN}${NOW} [+] Podaj nazwy baz danych, oddzielone spacjami: ${NC}"
-while read -s databases; do
+while read databases; do
 	if [[ $databases = "" ]];
 	then
 	echo -e "${RED}${NOW} [!] Nazwy baz danych nie moga byc puste, wpisz nazwy baz danych${NC}"
@@ -241,6 +241,7 @@ if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -C -Q "SELEC
 	echo "Polish_CI_AS" | sudo /opt/mssql/bin/mssql-conf set-collation
 	echo -e "${GREEN}${NOW} [+] Uruchamiam server SQL${NC}"
 	sudo systemctl start mssql-server
+	/bin/sleep 5
 	sudo systemctl status mssql-server
 fi
 
