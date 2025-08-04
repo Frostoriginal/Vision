@@ -185,12 +185,13 @@ dpkg -s mssql-server &> /dev/null
 			echo -e "${GREEN} [+] MSSQL Server zainstalowany, przechodzę do konfiguracji:${NC}"
 
 			#{echo "${sqllicense}"; echo "Yes";echo "${sqlpass}"; echo "${sqlpass}"; } | sudo /opt/mssql/bin/mssql-conf setup
-			if locale | grep pl_PL -q;
-			then
-			(echo "5"; echo "No"; echo "Yes"; echo "1"; echo "${sqlpass}"; echo "${sqlpass}"; ) | sudo /opt/mssql/bin/mssql-conf setup
-			else
-			(echo "5"; echo "No"; echo "Yes"; echo "${sqlpass}"; echo "${sqlpass}"; ) | sudo /opt/mssql/bin/mssql-conf setup
-			fi
+			#if locale | grep pl_PL -q;
+			#then
+			#(echo "5"; echo "No"; echo "Yes"; echo "1"; echo "${sqlpass}"; echo "${sqlpass}"; ) | sudo /opt/mssql/bin/mssql-conf setup
+			#else
+			#(echo "5"; echo "No"; echo "Yes"; echo "${sqlpass}"; echo "${sqlpass}"; ) | sudo /opt/mssql/bin/mssql-conf setup
+			#fi
+			sudo MSSQL_SA_PASSWORD=${sqlpass} \     MSSQL_PID=standard \     /opt/mssql/bin/mssql-conf -n setup accept-eula
 			
 			#sudo /opt/mssql/bin/mssql-conf setup
         else
