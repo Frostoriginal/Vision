@@ -250,9 +250,9 @@ fi
 
 #ustawianie bazy
 dbname="protel"
-# wget skrypt -> dbname.sql
+# wget skrypt -> /etc/vision/base.sql
 # sqlcmd -S myServer\instanceName -i C:\scripts\myScript.sql -> utworz baze ze skryptu?
-if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -i ${dbname}.sql
+if /opt/mssql-tools18/bin/sqlcmd -S ${ipadress} -U sa -P ${sqlpass} -i /etc/vision/base.sql
 	then
 	echo -e "${GREEN}${NOW} [+] Poprawnie wgrano baze ${dbname}${NC}"
 	else
